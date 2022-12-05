@@ -3,6 +3,41 @@ from MEMEFunctions import *
 from GibbsFunctions import *
 from pytictoc import TicToc
 
+def kmerHammingDistance(kmer1, kmer2):
+    """
+    Calculates the hamming distance between 2 kmers.
+
+    Parameters
+    ----------
+    kmer1 : ndarray
+        First kmer to be considered.
+    kmer2 : ndarray
+        Second kmer to be considered.
+
+    Returns
+    ----------
+    The hamming distance between kmer1 and kmer2.
+    """
+    return np.count_nonzero(kmer1 - kmer2)
+
+#Given two arrays of locations, measure the difference in locations between them
+def locHammingDistance(loc1, loc2):
+    """
+    Calculates the total point-wise difference between location ndarrays.
+
+    Parameters
+    ----------
+    loc1 : ndarray
+        First array to be considered.
+    loc2 : ndarray
+        Second array to be considered.
+
+    Returns
+    ----------
+    The total point-wise difference between loc1 and loc2.
+    """
+    return np.sum(np.abs(loc1 - loc2))
+
 def generateSeqsWithMotif(nSeqs, seqL, motifL, nMuts):
     """
     This function generates nSeqs of length seqL, and inserts a kmer of
@@ -43,14 +78,6 @@ def generateSeqsWithMotif(nSeqs, seqL, motifL, nMuts):
         seqs[i, locs[i]:locs[i]+motifL] = pattern
 
     return (seqs, consensus, locs)
-
-#Given two kmers, return the hamming distance between them
-def kmerHammingDistance(kmer1, kmer2):
-    return np.count_nonzero(kmer1 - kmer2)
-
-#Given two arrays of locations, measure the difference in locations between them
-def locHammingDistance(loc1, loc2):
-    return np.sum(np.abs(loc1 - loc2))
 
 def generateInputFile(fileOut, params, numTestsPerParam=1, randomState=None):
     """
