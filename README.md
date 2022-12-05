@@ -2,7 +2,7 @@
 
 This GitHub repo is part of the final project assigned for the class CS-4223 (Bioinformatics) at UTSA during the fall 2022 semester taught by Dr. Jianhua Ruan.
 
-The written report for this project can be found in the repo as "CS_4223_Project_Milestone_2.pdf"
+The written report for this project can be found in the repo as `CS_4223_Project_Milestone_2.pdf`
 
 ## Version Details
 All of the code for this project was written in Python 3.8.10 using VSCode. Additional libraries include:
