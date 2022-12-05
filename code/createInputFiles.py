@@ -2,6 +2,7 @@ from testingFunctions import *
 
 if __name__ == "__main__":
     #Default values
+    #[nSeqs, seqL, motifL, nMuts]
     defaults = [20, 40, 7, 1]
     #nSeqs
     params = defaults.copy()
