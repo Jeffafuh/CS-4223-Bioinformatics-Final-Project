@@ -1,6 +1,12 @@
 from testingFunctions import *
 
 if __name__ == "__main__":
+    """
+    Makes a bunch of calls to generateInputFile() with the appropriate file names and parameter settings
+    for nSeqs, seqL, motifL, and nMuts individually.
+    Random state is set to 0 for reproducability.
+    """
+
     #Default values
     #[nSeqs, seqL, motifL, nMuts]
     defaults = [20, 40, 7, 1]

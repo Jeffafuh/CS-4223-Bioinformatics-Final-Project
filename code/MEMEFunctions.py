@@ -20,9 +20,9 @@ def runBasicMEME(seqs, motifL, motifStartingProb, threshold, initSamplingSize=1)
 
     Returns
     -------
-    pwm : final PWM calculated
-    z : final Z matrix calculated
-    probNew: probability that the final PWM is the true PWM of the sequences
+    pwm : final PWM calculated.
+    z : final Z matrix calculated.
+    probNew: probability that the final PWM is the true PWM of the sequences.
     """
     pwm, probCur = memeInitPWM(seqs, motifL, motifStartingProb, initSamplingSize)
     z = initZMatrix(seqs, pwm)
@@ -56,8 +56,8 @@ def memeInitPWM(seqs, motifL, motifProb, initSamplingSize=1):
 
     Returns
     -------
-    bestPWM : initialized PWM to the best sequence found
-    bestProb : probability that the best sequence found occurs in the sequences
+    bestPWM : initialized PWM to the best sequence found.
+    bestProb : probability that the best sequence found occurs in the sequences.
     """
     subseqs = getAllUniqueSubSeqs(seqs, motifL)
     subseqs = sample(subseqs, int(len(subseqs) * initSamplingSize))
@@ -88,7 +88,7 @@ def getAllUniqueSubSeqs(seqs, length):
 
     Returns
     ----------
-    subseqs : the set of the unique substrings stored as tuples
+    subseqs : the set of the unique substrings stored as tuples.
     """
     subseqs = set()
 
@@ -114,7 +114,7 @@ def calcLogLikelyhood(seqs, pwm, z):
 
     Returns
     ----------
-    prob : float of the calculated probability
+    prob : float of the calculated probability.
     """
     prob = 0
     for i in range(seqs.shape[0]):
@@ -142,7 +142,7 @@ def initPWMForSeq(seq, x):
 
     Returns
     ----------
-    pwm : ndarray representing the PWM
+    pwm : ndarray representing the PWM.
     """
     pwm = np.zeros((4, seq.shape[0]+1)) + (1-x)/3
     pwm[:, 0] = 0.25
@@ -196,7 +196,7 @@ def initZMatrix(seqs, pwm):
 
     Returns
     ----------
-    All-zero ndarray representing the Z matrix
+    All-zero ndarray representing the Z matrix.
     """
     return np.zeros((seqs.shape[0], seqs.shape[1]-pwm.shape[1]+2))
 

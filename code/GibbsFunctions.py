@@ -1,24 +1,26 @@
 import numpy as np
 
-"""
-    Returns the indices of the maximum values along an axis.
+def runGibbs(seqs, motifL, minIters, maxIters):
+    """
+    Runs the Gibbs Sampling algorithm on a set of sequences.
 
     Parameters
     ----------
-    a : array_like
-        Input array.
-    axis : int, optional
-        By default, the index is into the flattened array, otherwise
-        along the specified axis.
-    out : array, optional
-        If provided, the result will be inserted into this array. It should
-        be of the appropriate shape and dtype.
+    seqs : ndarray
+        Array representing the set of sequences.
+    motifL : int
+        Length of the planted motif.
+    minIters : int
+        Minimum number of iterations to run the algorithm for.
+    maxIters : int
+        Maximum number of iterations to run the algorithm for.
 
     Returns
     -------
-    index_array : ndarray of ints
-"""
-def runGibbs(seqs, motifL, minIters, maxIters):
+    pwm : final PWM calculated.
+    locsNew : the final locations of the predicted motifs.
+    i: number of iterations the algorithm performed.
+    """
     pwm = initPWMMatrix(motifL)
     #Do one iteration, then enter while-loop
     locsCur = initRandomSamplePos(seqs, motifL)
@@ -39,17 +41,57 @@ def runGibbs(seqs, motifL, minIters, maxIters):
     return (pwm, locsNew, i)
 
 
-#Initialize the PSSM matrix to the appropriate shape
 def initPWMMatrix(motifL):
+    """
+    Initializes an empty PWM to the correct shape based on the motif length.
+
+    Parameters
+    ----------
+    motifL : int
+        Length of the motif to be considered.
+
+    Returns
+    ----------
+    All-zero ndarray representing the PWM.
+    """
     return np.zeros((4, motifL+1))
 
-#Init weights to a random sampling of the sequences
 def initRandomSamplePos(sequences, motifL):
+    """
+    Initializes the predicted motif locations to random locations.
+
+    Parameters
+    ----------
+    sequences : ndarray
+        Array representing the set of sequences.
+    motifL : int
+        Length of the motif to be considered.
+
+    Returns
+    ----------
+    locs: ndarray of the randomized locations for each sequence.
+    """
     locs = np.random.randint(0, sequences.shape[1] - motifL+1, (sequences.shape[0],))
 
     return locs
 
 def getKmers(seqs, locs, motifL):
+    """
+    Extract the kmers of length motifL from the set of sequences at the specified locations.
+
+    Parameters
+    ----------
+    seqs : ndarray
+        Array representing the set of sequences.
+    locs : ndarray
+        Locations to extract the kmers from.
+    motifL : int
+        Length of the motif to be extracted.
+
+    Returns
+    -------
+    kmers : ndarray of the kmers extracted from the sequences.
+    """
     kmers = np.zeros((seqs.shape[0], motifL))
     for x in range(locs.shape[0]):
         kmers[x, :] = seqs[x, locs[x]:locs[x]+motifL]
@@ -57,14 +99,42 @@ def getKmers(seqs, locs, motifL):
     return kmers
 
 def getBackground(seqs, locs, motifL):
+    """
+    Extract the characters AROUND the kmers of length motifL from the set of sequences at the specified locations.
+
+    Parameters
+    ----------
+    seqs : ndarray
+        Array representing the set of sequences.
+    locs : ndarray
+        Locations to of the kmers to cut out.
+    motifL : int
+        Length of the kmers to be extracted.
+
+    Returns
+    -------
+    background : ndarray the sequences without the specified kmers.
+    """
     background = np.zeros((seqs.shape[0], seqs.shape[1] - motifL))
     for i in range(seqs.shape[0]):
         background[i, :] = np.delete(seqs[i, :], np.arange(locs[i], locs[i]+motifL))
     return background
     
-
-#Given a sequence to remove, remove the sequence from seqs then recalculate the pwm matrix
 def predict_step(seqs, pwm, locs, idxToRemove):
+    """
+    Given a sequence to remove, remove the sequence from seqs then recalculate the pwm matrix.
+
+    Parameters
+    ----------
+    seqs : ndarray
+        Array representing the set of sequences.
+    pwm : ndarray
+        Position-Weighted Matrix to be updated.
+    locs : ndarray
+        Locations of all the predicted motif locations.
+    idxToRemove : int
+        Index of the sequence to remove.
+    """
     motifL = pwm.shape[1] - 1
     seqs = np.delete(seqs, idxToRemove, axis=0)
     locs = np.delete(locs, idxToRemove)
@@ -84,19 +154,22 @@ def predict_step(seqs, pwm, locs, idxToRemove):
     pwm[:, 1:] /= seqs.shape[0] + 4
     pwm[:, 0] /= seqs.shape[0] * (seqs.shape[1]-motifL) + 4
 
-    return idxToRemove
-
-#Given one sequence, a location in that sequence, and a pwm, calculate the log likelyhood that this pwm occurs at the startLoc
-def calcLikelyhoodOfSeq(seq, pwm, startLoc):
-    prob = 0
-
-    for i in range(1, pwm.shape[1]):
-        prob += np.log(pwm[seq[startLoc + i - 1], i] / pwm[seq[startLoc + i - 1], 0])
-
-    return prob
-
-#Given one sequence, calculate the likelyhood of the pwm occuring at each possible loc in the sequence
 def getDistributionForSeq(seq, pwm):
+    """
+    Calculate the distribution array for a sequence given a PWM.
+    This distribution is the likelyhood of the PWM occuring at each possible loc in the sequence.
+
+    Parameters
+    ----------
+    seq : ndarray
+        The sequence to calculate the distribution for.
+    pwm : ndarray
+        Position-Weighted Matrix to use for calculations.
+
+    Returns
+    ----------
+    distribution : ndarray of the motif distribution for the sequence.
+    """
     distribution = np.zeros((seq.shape[0] - pwm.shape[1] + 2,))
 
     for i in range(distribution.shape[0]):
@@ -107,13 +180,62 @@ def getDistributionForSeq(seq, pwm):
 
     return distribution
 
-#For the removed sequence, calculate a distribution matrix and choose a new location based on the new distribution returned
+def calcLikelyhoodOfSeq(seq, pwm, startLoc):
+    """
+    Calculates the probability that the motif starts at the specified location in a sequence given a PWM.
+
+    Parameters
+    ----------
+    seq : ndarray
+        Sequence to be considered.
+    pwm : ndarray
+        Position-Weighted Matrix to use for calculations.
+    startLoc : int
+        Starting location of the motif.
+
+    Returns
+    -------
+    prob : the probability as a single float.
+    """
+    prob = 0
+
+    for i in range(1, pwm.shape[1]):
+        prob += np.log(pwm[seq[startLoc + i - 1], i] / pwm[seq[startLoc + i - 1], 0])
+
+    return prob
+
 def sampling_step(seqs, pwm, locs, locIdx):
+    """
+    For the removed sequence, calculate the distribution array
+    and choose a new location (in-place) based on the new distribution array.
+
+    Parameters
+    ----------
+    seqs : ndarray
+        Array representing the set of sequences.
+    pwm : ndarray
+        Position-Weighted Matrix to use for calculations.
+    locs : ndarray
+        Locations of all the predicted motif locations.
+    locIdx : int
+        Location of the removed sequence to update.
+    """
     distribution = getDistributionForSeq(seqs[locIdx, :], pwm)
     locs[locIdx] = np.random.choice(distribution.shape[0], 1, p=distribution)
 
-#Given a set of kmers, find the consensus among them
 def getConsensus(kmers):
+    """
+    Gets the consensus string/array from a set of kmers.
+
+    Parameters
+    ----------
+    kmers : ndarray
+        Array representing the set of kmers.
+
+    Returns
+    -------
+    consensus : ndarray of ints representing the common consensus.
+    """
     #count up the char occurances for each pos
     counts = np.zeros((4, kmers.shape[1]))
     for i in range(4):

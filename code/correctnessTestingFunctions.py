@@ -2,8 +2,23 @@ from MEMEFunctions import *
 from GibbsFunctions import *
 from testingFunctions import *
 
-def test_e_m_steps(nSeqs, seqL, motifL):
-    (seqs, consensus, locs) = generateSeqsWithMotif(nSeqs, seqL, motifL, 0)
+def test_e_m_steps(nSeqs, seqL, motifL, nMuts):
+    """
+    Runs one iteration of E/M steps with the provided sequence generating parameters.
+    All relevant results are printed to stdout.
+
+    Parameters
+    ----------
+    nSeqs : int
+        Number of sequences to be generated.
+    seqL : int
+        Length of each sequence.
+    motifL : int
+        Length of the planted motif.
+    nMuts : int
+        Number of mutations for the motif.
+    """
+    (seqs, consensus, locs) = generateSeqsWithMotif(nSeqs, seqL, motifL, nMuts)
 
     print(seqs)
     weights = memeInitPWM(seqs, motifL, 0.7)
@@ -17,8 +32,11 @@ def test_e_m_steps(nSeqs, seqL, motifL):
     print(weights)
 
 #a=0, c=1, g=2, t=3
-
 def testMEMEToy():
+    """
+    Runs MEME with the a small toy example.
+    All relevant results are printed to stdout.
+    """
     seqs = np.array([[2, 3, 1, 0, 2, 2],
                  [2, 0, 2, 0, 2, 3],
                  [0, 1, 2, 2, 0, 2],
@@ -26,21 +44,28 @@ def testMEMEToy():
 
     pwm, z, prob = runBasicMEME(seqs, 3, 0.7, 0.001)
     print(getKmers(seqs, getZLocs(z), 3))
-    #print(consensus)
     print(getZLocs(z))
-    #print(locs)
-    #print(getConsensus(pwm))
-    #print(consensus)
     print(prob)
 
 def testGibbs(nSeqs, seqL, motifL, nMuts):
-    """ nSeqs = 20
-    seqL = 500
-    motifL = 15
-    nMuts = 6 """
+    """
+    Runs Gibbs Sampler with the provided sequence generating parameters.
+    All relevant results are printed to stdout.
+
+    Parameters
+    ----------
+    nSeqs : int
+        Number of sequences to be generated.
+    seqL : int
+        Length of each sequence.
+    motifL : int
+        Length of the planted motif.
+    nMuts : int
+        Number of mutations for the motif.
+    """
     (seqs, consensus, locs) = generateSeqsWithMotif(nSeqs, seqL, motifL, nMuts)
 
-    pssm, newLocs = runGibbs(seqs, motifL, 5, 300)
+    pwm, newLocs = runGibbs(seqs, motifL, 5, 300)
     newConsensus = getConsensus(getKmers(seqs, newLocs, motifL))
     print('Found Motif: ', newConsensus)
     print('Found Locs', newLocs)

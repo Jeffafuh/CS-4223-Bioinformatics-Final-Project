@@ -1,6 +1,11 @@
 from testingFunctions import *
 
 if __name__ == "__main__":
+    """
+    Makes a bunch of calls to testInputFileOnX() with the appropriate file names.
+    Random state is set to 0 for reproducability.
+    """
+
     #nSeqs
     testInputFileOnMEME('data/nSeqs_Inputs.txt', 'data/nSeqs_MEME_Runtime.txt', 0)
     testInputFileOnGibbs('data/nSeqs_Inputs.txt', 'data/nSeqs_Gibb_Runtime.txt', 0)

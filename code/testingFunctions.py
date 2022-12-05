@@ -20,7 +20,6 @@ def kmerHammingDistance(kmer1, kmer2):
     """
     return np.count_nonzero(kmer1 - kmer2)
 
-#Given two arrays of locations, measure the difference in locations between them
 def locHammingDistance(loc1, loc2):
     """
     Calculates the total point-wise difference between location ndarrays.
