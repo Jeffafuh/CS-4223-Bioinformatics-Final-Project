@@ -3,14 +3,31 @@ from MEMEFunctions import *
 from GibbsFunctions import *
 from pytictoc import TicToc
 
-# this function generates nSeqs of length seqL, and insert a kmer of
-# length motifL into each sequence. Each kmer has exactly nMuts mutations from
-# a common censensus sequence. 
-
-# Returns the seqs as an nSeqs x seqL array of integers between 1 and 4,
-# the consensus as an 1 x motifL array, and the locs where the kmers were
-# inserted as a nSeqs x 1 array.
 def generateSeqsWithMotif(nSeqs, seqL, motifL, nMuts):
+    """
+    This function generates nSeqs of length seqL, and inserts a kmer of
+    length motifL into each sequence. Each kmer has exactly nMuts mutations from
+    a common censensus sequence. 
+
+    Returns the sequences, motif, and motif locations planted within the sequences.
+
+    Parameters
+    ----------
+    nSeqs : int
+        Number of sequences to be generated.
+    seqL : int
+        Length of each sequence.
+    motifL : int
+        Length of the planted motif.
+    nMuts : int
+        Number of mutations for the motif.
+
+    Returns
+    -------
+    seqs : ndarray of shape nSeqs x seqL with integers between 0 and 3, inclusive
+    consensus : ndarray containing the original planted motif
+    locs : ndarray containing the location of the planted motif for each sequence
+    """
     seqs = np.random.randint(0, 4, (nSeqs, seqL))
     consensus = np.random.randint(0, 4, (motifL,))
     locs = np.random.randint(0, seqL - motifL+1, (nSeqs,))
@@ -37,28 +54,28 @@ def locHammingDistance(loc1, loc2):
 
 def generateInputFile(fileOut, params, numTestsPerParam=1, randomState=None):
     """
-    Generates an input file given a list of parameters to generate the sequences from
+    Generates an input file given a list of parameters to generate the sequences from.
 
     Parameters
     ----------
     fileOut : string
-        Name of the file to be written to (original file will first be truncated)
+        Name of the file to be written to (original file will first be truncated).
     params : list
         The list of parameters to generate the sequences from.
         The order of the parameters in the list are as follows:
         [nSeqs, seqL, motifL, nMuts]
         Whichever parameter is going to be changing will be in the form of a list in the respective index.
     numTestsPerParam : int, optional
-        Determines how many sequences to generate per unique parameter combination
+        Determines how many sequences to generate per unique parameter combination.
     randomState : float, optional
-        If provided, sets the np.random.seed() to the provided value
+        If provided, sets the np.random.seed() to the provided value.
 
-    File Outout
+    File Format
     ----------
     Number_of_different_parameters_to_test numTests
     nSeqs seqL motifL nMuts
 
-    <Flattened array of the sequences generated for test 1>
+    <Array of the sequences generated for test 1>
 
     <Consensus for the sequences generated for test 1>
 
@@ -66,7 +83,7 @@ def generateInputFile(fileOut, params, numTestsPerParam=1, randomState=None):
 
     ...
 
-    <Flattened array of the sequences generated for test numTests>
+    <Array of the sequences generated for test numTests>
 
     <Consensus for the sequences generated for test NumTests>
 
@@ -111,6 +128,26 @@ def generateInputFile(fileOut, params, numTestsPerParam=1, randomState=None):
                 writeNDarrayToFile(file, locs, 1)
 
 def testInputFileOnMEME(fileIn, fileOut, randomState=None, verbose=True):
+    """
+    Generates an output file of the runtimes for MEME
+    given an input file to read the sequence sets from.
+    The input file is in the format specified in generateInputFile().
+
+    Parameters
+    ----------
+    fileIn : string
+        Name of the file to read the sequences from.
+    fileOut : string
+        Name of the file to be written to (original file will first be truncated).
+    randomState : float, optional
+        If provided, sets the np.random.seed() to the provided value.
+    verbose : boolean, optional
+        Determines whether or not to print out messages to stdout after the completion of each test.
+
+    File Output
+    ----------
+    The runtimes for the algorithm are written as an ndarray to a .txt file using np.savetxt().
+    """
     if randomState != None:
         np.random.seed(randomState)
 
@@ -147,6 +184,26 @@ def testInputFileOnMEME(fileIn, fileOut, randomState=None, verbose=True):
         np.savetxt(fileOut, runtimes)
 
 def testInputFileOnGibbs(fileIn, fileOut, randomState=None, verbose=True):
+    """
+    Generates an output file of the runtimes for Gibbs Sampling
+    given an input file to read the sequence sets from.
+    The input file is in the format specified in generateInputFile().
+
+    Parameters
+    ----------
+    fileIn : string
+        Name of the file to read the sequences from.
+    fileOut : string
+        Name of the file to be written to (original file will first be truncated).
+    randomState : float, optional
+        If provided, sets the np.random.seed() to the provided value.
+    verbose : boolean, optional
+        Determines whether or not to print out messages to stdout after the completion of each test.
+
+    File Output
+    ----------
+    The runtimes for the algorithm are written as an ndarray to a .txt file using np.savetxt().
+    """
     if randomState != None:
         np.random.seed(randomState)
 
