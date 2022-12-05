@@ -1,15 +1,29 @@
 import numpy as np
 from random import sample
 
-""" TODO: generating the unique subsequences isn't the bottle neck, taking a step with them is
-          so maybe make an alternate memeInitPWM that only considers a random subset of the subsequences
-          maybe like only 1/4 or 1/5 of them?
-"""
+def runBasicMEME(seqs, motifL, motifStartingProb, threshold, initSamplingSize=1):
+    """
+    Runs the MEME algorithm on a set of sequences.
 
-def getZLocs(z):
-    return np.argmax(z, axis=1)
+    Parameters
+    ----------
+    seqs : ndarray
+        Array representing the set of sequences.
+    motifL : int
+        Length of the planted motif.
+    motifStartingProb : float
+        Probability of the motif occuring. (used to init the PWM).
+    threshold : float
+        The cutoff point of when to stop the algorithm.
+    initSamplingSize: float, optional
+        If provided, only searches through a random sampling of the unique subsequences proportional to the input value.
 
-def runBasicMEME(seqs, motifL, motifStartingProb, threshold, initSamplingSize):
+    Returns
+    -------
+    pwm : final PWM calculated
+    z : final Z matrix calculated
+    probNew: probability that the final PWM is the true PWM of the sequences
+    """
     pwm, probCur = memeInitPWM(seqs, motifL, motifStartingProb, initSamplingSize)
     z = initZMatrix(seqs, pwm)
     e_step(seqs, pwm, z)
@@ -23,7 +37,28 @@ def runBasicMEME(seqs, motifL, motifStartingProb, threshold, initSamplingSize):
     
     return (pwm, z, probNew)
 
-def memeInitPWM(seqs, motifL, motifProb, initSamplingSize):
+def memeInitPWM(seqs, motifL, motifProb, initSamplingSize=1):
+    """
+    Search all the unique subsequences found throughout the sequences and select the subsequence
+    that has the highest probability of occuring after on E/M step. This chosen subsequence is then
+    used to initialize a PWM.
+
+    Parameters
+    ----------
+    seqs : ndarray
+        Array representing the set of sequences.
+    motifL : int
+        Length of the planted motif.
+    motifProb : float
+        Probability of the motif occuring. (used to init the PWM).
+    initSamplingSize: float, optional
+        If provided, only searches through a random sampling of the unique subsequences proportional to the input value.
+
+    Returns
+    -------
+    bestPWM : initialized PWM to the best sequence found
+    bestProb : probability that the best sequence found occurs in the sequences
+    """
     subseqs = getAllUniqueSubSeqs(seqs, motifL)
     subseqs = sample(subseqs, int(len(subseqs) * initSamplingSize))
     bestPWM = None
@@ -40,8 +75,21 @@ def memeInitPWM(seqs, motifL, motifProb, initSamplingSize):
 
     return (bestPWM, bestProb)
 
-#Given a set of sequences, generate the set of all unique substrings of size length found in the sequences
 def getAllUniqueSubSeqs(seqs, length):
+    """
+    Enumerates all unique substrings found within the sequences of the specified length.
+
+    Parameters
+    ----------
+    seqs : ndarray
+        Array representing the set of sequences.
+    length : int
+        Length of the substrings to be enumerated.
+
+    Returns
+    ----------
+    subseqs : the set of the unique substrings stored as tuples
+    """
     subseqs = set()
 
     for i in range(seqs.shape[1]-length+1):
@@ -51,8 +99,23 @@ def getAllUniqueSubSeqs(seqs, length):
 
     return subseqs
 
-#Given a set of sequences, a pwm, and a z matrix, calculate to log probability ratio that this pwm is the true pwm
 def calcLogLikelyhood(seqs, pwm, z):
+    """
+    Calculates the log probability ratio that a PWM is the true PWM of the sequences.
+
+    Parameters
+    ----------
+    seqs : ndarray
+        Array representing the set of sequences.
+    pwm : ndarray
+        Position-Weighted Matrix to be considered.
+    z : ndarray
+        Z matrix to use for calculations.
+
+    Returns
+    ----------
+    prob : float of the calculated probability
+    """
     prob = 0
     for i in range(seqs.shape[0]):
         posProb = 0
@@ -62,8 +125,25 @@ def calcLogLikelyhood(seqs, pwm, z):
 
     return prob
 
-#Initialize a pwm for a given input sequence where each symbol in the sequence has a probability of x ocurring
 def initPWMForSeq(seq, x):
+    """
+    Initializes PWM to a given sequence.
+
+    For i > 0, PWM[c, i] = x if c occurs at seq[i-1] and PWM[c, i] = 1-x otherwise.
+
+    The background probabilities (i=0) are initialized to a uniform distribution.
+
+    Parameters
+    ----------
+    seq : ndarray
+        Sequence to initialize the PWM to.
+    x : float
+        Probability of the motif occuring.
+
+    Returns
+    ----------
+    pwm : ndarray representing the PWM
+    """
     pwm = np.zeros((4, seq.shape[0]+1)) + (1-x)/3
     pwm[:, 0] = 0.25
     for i in range(seq.shape[0]):
@@ -71,8 +151,20 @@ def initPWMForSeq(seq, x):
     
     return pwm
 
-#Re-estimate the pwm matrix given a new Z matrix
 def m_step(seqs, pwm, z):
+    """
+    Updates the PWM (in-place) given a Z matrix.
+
+    Parameters
+    ----------
+    seqs : ndarray
+        Array representing the set of sequences.
+    pwm : ndarray
+        Position-Weighted Matrix to be updated.
+    z : ndarray
+        Z matrix to use for calculations.
+    """
+
     #motif probabilites (all but last column)
     for i in range(1, pwm.shape[1]-1):
         for j in range(4):
@@ -91,25 +183,74 @@ def m_step(seqs, pwm, z):
     pwm[:, 1:] /= seqs.shape[0]+4 #equivalent to doing z.sum()+4
     pwm[:, 0] /= np.sum(pwm[:, 0])
 
-#Initialize the Z matrix to the appropriate shape
 def initZMatrix(seqs, pwm):
+    """
+    Initializes an empty Z matrix to the correct shape based of the PWM and sequences' shape.
+
+    Parameters
+    ----------
+    seqs : ndarray
+        Array representing the set of sequences.
+    pwm : ndarray
+        Position-Weighted Matrix.
+
+    Returns
+    ----------
+    All-zero ndarray representing the Z matrix
+    """
     return np.zeros((seqs.shape[0], seqs.shape[1]-pwm.shape[1]+2))
 
-#Re-estimate the Z matrix given a new weight matrix
-# z = np.zeros((seqs.shape[0], seqs.shape[1]-pwm.shape[1]+2))
 def e_step(seqs, pwm, z):
+    """
+    Updates the Z matrix (in-place) given a PWM.
+
+    Parameters
+    ----------
+    seqs : ndarray
+        Array representing the set of sequences.
+    pwm : ndarray
+        Position-Weighted Matrix to use for calculations.
+    z : ndarray
+        Z matrix to be updated.
+    """
     for i in range(seqs.shape[0]):
         getProbSequence(seqs[i, :], pwm, z[i, :])
 
-#Given a sequence and a weight matrix, update the Z matrix in-place to the appropriate values/probabilities
 def getProbSequence(seq, pwm, subZ):
+    """
+    Updates the one row of the Z matrix (in-place) given a PWM.
+
+    Parameters
+    ----------
+    seq : ndarray
+        Sequence to be considered for the Z row.
+    pwm : ndarray
+        Position-Weighted Matrix to use for calculations.
+    subZ : ndarray
+        Row of the Z matrix to be updated.
+    """
     for i in range(subZ.shape[0]):
         subZ[i] = getProbInSeqLoc(seq, pwm, i)
     #normalize row
     subZ /= subZ.sum()
 
-#Given a sequence, weight matrix, and a hypothesized location where the motif is, calculate the probability of this occuring
 def getProbInSeqLoc(seq, pwm, loc):
+    """
+    Calculates the probability that the motif starts at the specified location in a sequence given a PWM.
+
+    Parameters
+    ----------
+    seq : ndarray
+        Sequence to be considered.
+    pwm : ndarray
+        Position-Weighted Matrix to use for calculations.
+    loc : int
+        Starting location of the motif.
+
+    Returns
+    -------
+    prob : the probability as a single float.
+    """
     prob = 1
 
     #get probabilities before the hypothesized start location in the background
@@ -126,10 +267,40 @@ def getProbInSeqLoc(seq, pwm, loc):
 
     return prob
 
-#Given a bunch of sequences and locations, extract the kmers of length k from those locations and return them
 def getKmers(seqs, locs, motifL):
+    """
+    Extract the kmers of length motifL from the set of sequences at the specified locations.
+
+    Parameters
+    ----------
+    seqs : ndarray
+        Array representing the set of sequences.
+    locs : ndarray
+        Locations to extract the kmers from.
+    motifL : int
+        Length of the motif to be extracted.
+
+    Returns
+    -------
+    kmers : ndarray of the kmers extracted from the sequences.
+    """
     kmers = np.zeros((seqs.shape[0], motifL))
     for x in range(locs.shape[0]):
         kmers[x, :] = seqs[x, locs[x]:locs[x]+motifL]
     
     return kmers
+
+def getZLocs(z):
+    """
+    Gets the position with the highest probability of the motif occuring for each sequence.
+
+    Parameters
+    ----------
+    z : ndarray
+        Z matrix containing the probabilities.
+
+    Returns
+    ----------
+    An ndarray containing the location of the motif for each sequence.
+    """
+    return np.argmax(z, axis=1)
